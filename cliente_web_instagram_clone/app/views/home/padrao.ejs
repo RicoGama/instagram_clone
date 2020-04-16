@@ -32,18 +32,54 @@
 											data[i].titulo + 
 										'</span>' + 
 										'<img src="http://localhost:8080/imagens/' + data[i].url_imagem + '" />' +
+										'<div class="comentarios" id="comentarios-' + data[i]._id + '"></div>' +
 										'<div class="comentar">' +
 											'<input type="text" class="form-control input_comentario" id="postagem-' + data[i]._id + '" placeholder="Adicione um comentário" />' +
 											'<button class="btn btn-default btn_postagem" value="' + data[i]._id + '" type="button">Comentar</button>' + 
 										'</div>' +
 									'</div>'
 								);
+
+								if (data[i].comentarios != undefined) {
+									var comentarios = data[i].comentarios; 
+									for (var j = 0; j < comentarios.length; j++) {
+										$('#comentarios-' + data[i]._id).append(
+											'<div class="txt_comentario">' +
+												'<button class="btn btn-default btn_remover_postagem" type="button" value="' + comentarios[j]._id + '">x</button>' +
+												comentarios[j].comentario +
+											'</div>'
+										);
+									}
+								}
 							}
+
+							$('.btn_remover_postagem').click(function () {
+								var id_comentario = this.value;
+								var xhr = new XMLHttpRequest();
+								xhr.open('DELETE', 'http://localhost:8080/api/comentarios/' + id_comentario);
+
+								xhr.onload = function () {
+									if (xhr.status === 200) {
+										window.location.href = "/home"
+									}
+								}
+								xhr.send();
+							});
 
 							$('.btn_postagem').click(function (e) {
 								var id = this.value;
 								var idInputComentario = 'postagem-' + id;
 								var comentario = $('#' + idInputComentario).val();
+
+								var xhr = new XMLHttpRequest();
+								xhr.open('PUT', 'http://localhost:8080/api/' + id);
+								xhr.setRequestHeader('Content-Type', 'application/json');
+								xhr.onload = function () {
+									if (xhr.status === 200) {
+										window.location.href = "/home"
+									}
+								}
+								xhr.send(JSON.stringify({comentario: comentario}));
 							});
 						}
 					};
