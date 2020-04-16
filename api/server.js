@@ -10,6 +10,15 @@ var app = express();
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 app.use(multiparty());
+app.use(function (req, res, next) {
+
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+    res.setHeader('Access-Control-Allow-Headers', 'content-type');
+    res.setHeader('Access-Control-Allow-Credentials', true);
+
+    next();
+});
 
 var port = 8080;
 
@@ -28,8 +37,6 @@ app.get('/', function (req, res) {
 });
 
 app.post('/api', function (req, res) {
-
-    res.setHeader('Access-Control-Allow-Origin', '*');
 
     var date = new Date();
     var timestamp = date.getTime();
@@ -68,7 +75,7 @@ app.post('/api', function (req, res) {
 });
 
 app.get('/api', function (req, res) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    
     db.open(function (err, mongoclient) {
         mongoclient.collection('postagens', function (err, collection) {
             collection.find().toArray(function (err, results) {
@@ -118,12 +125,17 @@ app.get('/api/:id', function (req, res) {
 
 
 app.put('/api/:id', function (req, res) {
-
     db.open(function (err, mongoclient) {
         mongoclient.collection('postagens', function (err, collection) {
             collection.update(
                 {_id: objectdId(req.params.id)},
-                {$set: {titulo : req.body.titulo}},
+                {$push: {
+                        comentarios: {
+                            _id: new objectdId(),
+                            comentario: req.body.comentario
+                        }
+                    }
+                },
                 {},
                 function (err, records) {
                     if (err) {
@@ -137,8 +149,6 @@ app.put('/api/:id', function (req, res) {
             );
         });
     });
-
-
 });
 
 app.delete('/api/:id', function (req, res) {
@@ -158,4 +168,30 @@ app.delete('/api/:id', function (req, res) {
     });
 
 
+});
+
+app.delete('/api/comentarios/:id', function (req, res) {
+    db.open(function (err, mongoclient) {
+        mongoclient.collection('postagens', function (err, collection) {
+            collection.update(
+                {},
+                {$pull: {
+                        comentarios: {
+                            _id: objectdId(req.params.id)
+                        }
+                    }
+                },
+                {multi: true},
+                function (err, records) {
+                    if (err) {
+                        res.json(err);
+                    } else {
+                        res.json(records);
+                    }
+
+                    mongoclient.close();
+                }
+            );
+        });
+    });
 });
